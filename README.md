@@ -155,7 +155,7 @@ The following example is writing a new user to `my-user-table`.
 from DynamoDBInterface import DynamoDB
 db = DynamoDB.Database()
 
-result = db.table("my-user-table").write(
+db.table("my-user-table").write(
     {
         "user-id": "another_id",
         "username": "new_username",
@@ -237,4 +237,34 @@ db = DynamoDB.Database()
 
 all_users_data = db.table("my-user-table").scan()
 ```
+
+## DatabaseQueryResult Class
+When the `get()` function [above](#get-data) is called, it returns the `DatabaseQueryResult` object which represents 
+the response from DynamoDB.
+
+> `DatabaseQueryResult` implements `__getitem__()` so referencing an index in the result can be done directly like a 
+> normal list (with square brackets surround a number).
+
+The functions available on `DatabaseQueryResult` is as follows:
+
+```python
+from DynamoDBInterface import DynamoDB
+db = DynamoDB.Database()
+
+result = db.table("my-user-table").get(
+    "user-id", equals="a_user_id"
+)
+
+result.exists() # True if a row exists where field "username" equals "a_username"
+result.first() # Returns the first returned row from the query
+result.last() # Returns the last returned row from the query
+result.length() # Returns the number of rows returned
+result.is_unique() # True if length()==1
+result.all() # Returns all the value as a proper list, will return [] (empty list) if data doesn't exist
+```
+
+> Note that result **always** act like a list (even when you're querying using primary key and there's supposed to only 
+> be one row returned). Therefore, even when accessing fields from result that only has one value, you will have to 
+> either use `first()` to reference the first (and only) row or do `result[0]` before accessing. For example:
+> `user_region = result.first()["region"]` or `user_region = result[0]["region"]`
 
