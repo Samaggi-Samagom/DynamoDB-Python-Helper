@@ -109,7 +109,7 @@ result = db.table("my-user-table").get(
 > **Important:** This will result in an exception being thrown (and subsequent crash) if `username` isn't created as a 
 > global secondary index for the table.
 
-### Check if a value exist
+### Check if a value exists
 The `there_exists()` function provides a shortcut way for checking if a row where a key matches a certain value exists. 
 The function signature is as follows:
 ```python
