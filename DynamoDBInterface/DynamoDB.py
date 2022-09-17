@@ -73,8 +73,7 @@ class Table:
             Item=values
         )
 
-    def update(self, where: str, equals: Any, data_to_update: Dict[str, Any], is_secondary_index: bool = False,
-               index_name: str = None):
+    def update(self, where: str, equals: Any, data_to_update: Dict[str, Any]):
         if not data_to_update:
             return
 
@@ -83,18 +82,18 @@ class Table:
         expression_attr_name = {}
 
         for i, (key, data) in enumerate(data_to_update.items()):
-            expression += f":{string.ascii_letters[2*i]} = :{string.ascii_letters[2*i+1]}, "
-            expression_attr_name[string.ascii_letters[2*i]] = key
-            expression_attr_val[string.ascii_letters[2*i+1]] = data
+            expression += f"#{string.ascii_letters[2*i]} = :{string.ascii_letters[2*i+1]}, "
+            expression_attr_name["#" + string.ascii_letters[2*i]] = key
+            expression_attr_val[":" + string.ascii_letters[2*i+1]] = data
 
         expression = expression[:-2]
 
+        key = {where: equals}
         self._db.db_resource.Table(self._table_name).update_item(
-            Key={where: equals},
+            Key=key,
             UpdateExpression=expression,
             ExpressionAttributeValues=expression_attr_val,
             ExpressionAttributeNames=expression_attr_name,
-            IndexName=index_name if is_secondary_index else None
         )
 
     def scan(self, consistent_read: bool = False):
