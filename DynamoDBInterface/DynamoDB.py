@@ -112,10 +112,45 @@ class Table:
         return scan_result
 
 
+class KeyValueTable(Table):
+
+    def __init__(self, db, table_name: str, key_col_name: str, val_col_name: str):
+        super().__init__(db, table_name)
+        self._key_col_name = key_col_name
+        self._val_col_name = val_col_name
+
+    def value(self, for_key: str):
+        res = self.get(self._key_col_name, equals=for_key)
+
+        if not res.exists():
+            return None
+
+        return res.first()[self._val_col_name]
+
+
 class Database:
 
-    def __init__(self):
+    def __init__(self, global_data_table_name="global-data-table", global_data_table_config: Dict[str, str] = None):
         self.db_resource = boto3.resource("dynamodb")
+        self._global_data_table_name = global_data_table_name
+
+        if global_data_table_config is None:
+            global_data_table_config = {
+                "key_column_name": None,
+                "value_column_name": None
+            }
+
+        self._global_data_config: Dict[str, str] = global_data_table_config
 
     def table(self, table_name) -> Table:
         return Table(self, table_name)
+
+    def key_value_table(self, table_name, key_column_name="data-id", value_column_name="value"):
+        return KeyValueTable(self, self._global_data_table_name, )
+
+    def globals(self):
+        return self.key_value_table(
+            self._global_data_table_name,
+            self._global_data_config["key_column_name"],
+            self._global_data_config["value_column_name"]
+        )
