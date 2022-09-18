@@ -8,13 +8,13 @@ readable and shorter than with only `boto3` (which the code is based on).
 #### Installation with `pip`
 To install, run the following command in terminal
 ```bash
-pip install git+https://github.com/Samaggi-Samagom/DynamoDB-Python-Helper#egg=master
+pip install git+https://github.com/Samaggi-Samagom/DynamoDB-Python-Helper@master
 ```
 
 #### Using `requirements.txt`
 Or add the following line to `requirements.txt`
 ```requirements.txt
-git+https://github.com/Samaggi-Samagom/DynamoDB-Python-Helper#egg=master
+git+https://github.com/Samaggi-Samagom/DynamoDB-Python-Helper@master
 ```
 > Once added, do not forget to run
 > ```bash
