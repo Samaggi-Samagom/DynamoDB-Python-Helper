@@ -14,7 +14,7 @@ pip install git+https://github.com/Samaggi-Samagom/DynamoDB-Python-Helper@master
 #### Using `requirements.txt`
 Or add the following line to `requirements.txt`
 ```requirements.txt
-git+https://github.com/Samaggi-Samagom/DynamoDB-Python-Helper@master
+git+https://github.com/Samaggi-Samagom/DynamoDB-Python-Helper@main
 ```
 > Once added, do not forget to run
 > ```bash
