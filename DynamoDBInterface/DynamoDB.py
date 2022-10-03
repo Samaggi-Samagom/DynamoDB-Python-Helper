@@ -154,7 +154,7 @@ class Database:
         return Table(self, table_name)
 
     def key_value_table(self, table_name, key_column_name="data-id", value_column_name="value"):
-        return KeyValueTable(self, self._global_data_table_name, )
+        return KeyValueTable(self, table_name, key_column_name, value_column_name)
 
     def globals(self):
         return self.key_value_table(
