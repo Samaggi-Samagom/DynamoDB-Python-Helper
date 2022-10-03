@@ -144,8 +144,8 @@ class Database:
 
         if global_data_table_config is None:
             global_data_table_config = {
-                "key_column_name": None,
-                "value_column_name": None
+                "key_column_name": "data-id",
+                "value_column_name": "value"
             }
 
         self._global_data_config: Dict[str, str] = global_data_table_config
