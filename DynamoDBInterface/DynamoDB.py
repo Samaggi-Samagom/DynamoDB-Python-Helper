@@ -45,7 +45,7 @@ class Table:
 
     def there_exists(self, a_value: Any, at_column: str, is_secondary_index: bool = False,
                      secondary_index_name: str = None, consistent_read: bool = False):
-        query = self.get(a_value, at_column, is_secondary_index, secondary_index_name, consistent_read)
+        query = self.get(at_column, a_value, is_secondary_index, secondary_index_name, consistent_read)
 
         return query.exists()
 
