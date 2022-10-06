@@ -20,6 +20,8 @@ class DatabaseQueryResult:
         return self._items[-1]
 
     def __getitem__(self, item):
+        if isinstance(item, str):
+            return self._items[0][item]
         return self._items[item]
 
     def length(self):
