@@ -102,7 +102,7 @@ class Table:
         scan_result = []
         temp = None
 
-        while "LastEvaluatedKey" in temp or temp is None:
+        while temp is None or "LastEvaluatedKey" in temp:
             temp = self._db.db_resource.Table(self._table_name).scan(
                 ExclusiveStartKey=temp["LastEvaluatedKey"] if temp is not None else None,
                 ConsistentRead=consistent_read
