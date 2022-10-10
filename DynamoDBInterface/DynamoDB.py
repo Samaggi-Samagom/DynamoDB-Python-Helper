@@ -103,10 +103,15 @@ class Table:
         temp = None
 
         while temp is None or "LastEvaluatedKey" in temp:
-            temp = self._db.db_resource.Table(self._table_name).scan(
-                ExclusiveStartKey=temp["LastEvaluatedKey"] if temp is not None else None,
-                ConsistentRead=consistent_read
-            )
+            if temp is None or temp["LastEvaluatedKey"] is None:
+                temp = self._db.db_resource.Table(self._table_name).scan(
+                    ConsistentRead=consistent_read
+                )
+            else:
+                temp = self._db.db_resource.Table(self._table_name).scan(
+                    ExclusiveStartKey=temp["LastEvaluatedKey"] if temp is not None else None,
+                    ConsistentRead=consistent_read
+                )
 
             if "Items" in temp and len(temp["Items"]) >= 1:
                 scan_result += temp["Items"]
