@@ -39,6 +39,9 @@ class DatabaseQueryResult:
     def all(self):
         return self._items if self._items is not None else []
 
+    def __contains__(self, item):
+        return item in self._items
+
 
 class Table:
     def __init__(self, db, table_name: str):
