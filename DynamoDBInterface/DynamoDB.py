@@ -21,7 +21,13 @@ class DatabaseQueryResult:
 
     def __getitem__(self, item):
         if isinstance(item, str):
-            return self._items[0][item]
+            if self.length() == 1:
+                return self._items[0][item]
+            elif self.length() != 0:
+                raise TypeError("Cannot call __get_item__() with string parameters as query returns more than one "
+                                "result.")
+            else:
+                raise IndexError("Cannot call __get_item__() as query returned no result.")
         return self._items[item]
 
     def length(self):
@@ -40,7 +46,14 @@ class DatabaseQueryResult:
         return self._items if self._items is not None else []
 
     def __contains__(self, item):
-        return item in self._items
+        if self.length() == 0:
+            raise IndexError("Cannot call __contains__() as query returned no result.")
+        if isinstance(item, dict) and self.length() > 1:
+            return item in self._items
+        if self.length() == 1:
+            return item in self._items[0]
+        elif self.length() > 1:
+            raise TypeError("Cannot call __contains__() when query returns more than one result.")
 
 
 class Table:
