@@ -9,6 +9,8 @@ class DatabaseQueryResult:
     def __init__(self, data):
         self._data = data
         self._items = data["Items"] if "Items" in data else None
+        self.__i = 0
+        self.__i_mode = "NONE"
 
     def exists(self):
         return self._items is not None and len(self._items) != 0
@@ -54,6 +56,30 @@ class DatabaseQueryResult:
 
     def all(self):
         return self._items if self._items is not None else []
+
+    def __next__(self):
+        if self.__i_mode == "DICT":
+            if self.__i >= len(self.first()) - 1:
+                raise StopIteration
+            self.__i += 1
+            key = list(self._items[0].keys())[self.__i]
+            value = self._items[0][key]
+            return key, value
+        else:
+            if self.__i >= self.length() - 1:
+                raise StopIteration
+            self.__i += 1
+            return self[self.__i]
+
+    def __iter__(self):
+        self.__i = -1
+
+        if self.length() == 1:
+            self.__i_mode = "DICT"
+        else:
+            self.__i_mode = "LIST"
+
+        return self
 
     def __contains__(self, item):
         if self.length() == 0:
