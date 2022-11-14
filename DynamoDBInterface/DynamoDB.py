@@ -30,6 +30,16 @@ class DatabaseQueryResult:
                 raise IndexError("Cannot call __get_item__() as query returned no result.")
         return self._items[item]
 
+    def __setitem__(self, key, value):
+        if isinstance(key, str):
+            if self.length() == 1:
+                self._items[0][key] = value
+            elif self.length() != 0:
+                raise TypeError("Cannot call __setitem__() with string parameters as query returns more than one "
+                                "result.")
+            else:
+                raise IndexError("Cannot call __setitem__() as query returned no result.")
+
     def length(self):
         return len(self._items)
 
