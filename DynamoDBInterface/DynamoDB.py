@@ -136,7 +136,7 @@ class Table:
         expression_attr_name = {}
 
         for i, (key, data) in enumerate(data_to_update.items()):
-            expression += f"#{string.ascii_letters[2*i]} = :{string.ascii_letters[2*i+1]}, "
+            expression += f"#{string.ascii_letters[2*i]} = :{string.ascii_letters[2*i+1]} {expression_suffix}, "
             expression_attr_name["#" + string.ascii_letters[2*i]] = key
             expression_attr_val[":" + string.ascii_letters[2*i+1]] = data
 
@@ -149,6 +149,29 @@ class Table:
             ExpressionAttributeValues=expression_attr_val,
             ExpressionAttributeNames=expression_attr_name,
         )
+
+    def relative_update(self, where: str, equals: str, update: str, by: int, using_operation: str):
+        expression = f"SET #a = #a {using_operation} :b"
+        expression_attr_name = {
+            "#a": update
+        }
+        expression_attr_val = {
+            ":b": by
+        }
+
+        key = {where:equals}
+        self._db.db_resource.Table(self._table_name).update_item(
+            Key=key,
+            UpdateExpression=expression,
+            ExpressionAttributeValues=expression_attr_val,
+            ExpressionAttributeNames=expression_attr_name
+        )
+
+    def increment(self, where: str, equals: str, value_key: str, by: int):
+        self.relative_update(where, equals, update=value_key, by=by, using_operation="+")
+
+    def decrement(self, where: str, equals: str, value_key: str, by: int):
+        self.relative_update(where, equals, update=value_key, by=by, using_operation="-")
 
     def scan(self, consistent_read: bool = False):
         scan_result = []
