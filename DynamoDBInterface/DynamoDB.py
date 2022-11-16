@@ -136,7 +136,7 @@ class Table:
         expression_attr_name = {}
 
         for i, (key, data) in enumerate(data_to_update.items()):
-            expression += f"#{string.ascii_letters[2*i]} = :{string.ascii_letters[2*i+1]} {expression_suffix}, "
+            expression += f"#{string.ascii_letters[2*i]} = :{string.ascii_letters[2*i+1]}, "
             expression_attr_name["#" + string.ascii_letters[2*i]] = key
             expression_attr_val[":" + string.ascii_letters[2*i+1]] = data
 
