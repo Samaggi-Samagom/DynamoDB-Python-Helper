@@ -1,7 +1,35 @@
+import enum
 import string
-from typing import Any, Dict
 from boto3.dynamodb.conditions import Key
 import boto3
+from typing import List, Dict, Any
+from functools import partial as p
+
+
+class FilterType(enum.Enum):
+    EQUALS = p(lambda x, y: x == y)
+    EQUALS_NON_CS = p(lambda x, y: x.lower() == y.lower())
+    NOT_EQUAL = p(lambda x, y: x != y)
+    CONTAINS = p(lambda x, y: y in x)
+    NOT_CONTAINS = p(lambda x, y: y not in x)
+    GREATER_THAN = p(lambda x, y: x > y)
+    GREATER_THAN_EQUAL = p(lambda x, y: x >= y)
+    LESS_THAN = p(lambda x, y: x < y)
+    LESS_THAN_EQUAL = p(lambda x, y: x <= y)
+
+
+class Filter:
+
+    def __init__(self, column: str, value: str, filter_type: FilterType):
+        self.val = value
+        self.col = column
+        self.filter_type = filter_type
+
+    def apply(self, data: List[Dict[str, Any]]):
+        return [d for d in data if self.col in d and self.filter_type.value(d[self.col], self.val)]
+
+    def __str__(self):
+        return f"FILTER: On \"{self.col}\" of type \"{self.filter_type.name}\" for condition \"{self.val}\""
 
 
 class DatabaseQueryResult:
@@ -14,6 +42,9 @@ class DatabaseQueryResult:
 
     def exists(self):
         return self._items is not None and len(self._items) != 0
+
+    def dump(self):
+        return self._data
 
     def first(self):
         return self._items[0]
@@ -57,6 +88,12 @@ class DatabaseQueryResult:
     def all(self):
         return self._items if self._items is not None else []
 
+    def filter(self, column: str, value: str, filter_type: FilterType = FilterType.EQUALS):
+        return self.filter_using(Filter(column, value, filter_type))
+
+    def filter_using(self, f: Filter):
+        return FilteredResponse(self, f)
+
     def __next__(self):
         if self.__i_mode == "DICT":
             if self.__i >= len(self.first()) - 1:
@@ -90,6 +127,39 @@ class DatabaseQueryResult:
             return item in self._items[0]
         elif self.length() > 1:
             raise TypeError("Cannot call __contains__() when query returns more than one result.")
+
+
+class FilteredResponse(DatabaseQueryResult):
+
+    def __init__(self, original_query_response: DatabaseQueryResult, current_filter: Filter, filter_stack: list = None,
+                 last_filtered: DatabaseQueryResult = None):
+        if filter_stack is None:
+            filter_stack = []
+
+        self._filter_stack = filter_stack + [current_filter]
+        self._original_data = original_query_response
+
+        if last_filtered is not None:
+            data = last_filtered.dump()
+            if "Items" not in data:
+                super().__init__(data)
+                return
+            data["Items"] = current_filter.apply(data["Items"])
+            super().__init__(data)
+        else:
+            data = original_query_response.dump()
+            if "Items" not in data:
+                super().__init__(data)
+                return
+            for f in self._filter_stack:
+                data["Items"] = f.apply(data["Items"])
+            super().__init__(data)
+
+    def filter_stack(self):
+        return [str(f) for f in self._filter_stack]
+
+    def filter_using(self, f: Filter):
+        return FilteredResponse(self._original_data, f, self._filter_stack, self)
 
 
 class Table:
@@ -136,9 +206,9 @@ class Table:
         expression_attr_name = {}
 
         for i, (key, data) in enumerate(data_to_update.items()):
-            expression += f"#{string.ascii_letters[2*i]} = :{string.ascii_letters[2*i+1]}, "
-            expression_attr_name["#" + string.ascii_letters[2*i]] = key
-            expression_attr_val[":" + string.ascii_letters[2*i+1]] = data
+            expression += f"#{string.ascii_letters[2 * i]} = :{string.ascii_letters[2 * i + 1]}, "
+            expression_attr_name["#" + string.ascii_letters[2 * i]] = key
+            expression_attr_val[":" + string.ascii_letters[2 * i + 1]] = data
 
         expression = expression[:-2]
 
@@ -159,7 +229,7 @@ class Table:
             ":b": by
         }
 
-        key = {where:equals}
+        key = {where: equals}
         self._db.db_resource.Table(self._table_name).update_item(
             Key=key,
             UpdateExpression=expression,
