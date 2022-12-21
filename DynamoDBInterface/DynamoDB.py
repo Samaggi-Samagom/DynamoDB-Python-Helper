@@ -252,7 +252,7 @@ class Table:
     def decrement(self, where: str, equals: str, value_key: str, by: int):
         self.relative_update(where, equals, update=value_key, by=by, using_operation="-")
 
-    def scan(self, consistent_read: bool = False):
+    def scan(self, consistent_read: bool = False) -> DatabaseQueryResult:
         scan_result = []
         temp = None
 
