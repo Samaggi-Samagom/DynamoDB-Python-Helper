@@ -52,6 +52,12 @@ class DatabaseQueryResult:
     def last(self):
         return self._items[-1]
 
+    def unique(self, key: str, ignores_empty: bool = True):
+        return set([x[key] if key in x else None for x in self._items if key in x and ignores_empty])
+
+    def count_unique(self, key: str, ignores_empty: bool = True):
+        return len(self.unique(key, ignores_empty))
+
     def __getitem__(self, item):
         if isinstance(item, str):
             if self.length() == 1:
