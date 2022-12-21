@@ -270,7 +270,7 @@ class Table:
             if "Items" in temp and len(temp["Items"]) >= 1:
                 scan_result += temp["Items"]
 
-        return scan_result
+        return DatabaseQueryResult({"Items": scan_result})
 
 
 class KeyValueTable(Table):
