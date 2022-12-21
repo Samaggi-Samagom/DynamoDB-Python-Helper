@@ -197,6 +197,9 @@ class Table:
             Item=values
         )
 
+    def delete(self, where: str, equals: Any):
+        self._db.db_resource.Table(self._table_name).delete_item(Key={where: equals})
+
     def update(self, where: str, equals: Any, data_to_update: Dict[str, Any]):
         if not data_to_update:
             return
