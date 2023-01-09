@@ -16,6 +16,8 @@ class FilterType(enum.Enum):
     GREATER_THAN_EQUAL = p(lambda x, y: x >= y)
     LESS_THAN = p(lambda x, y: x < y)
     LESS_THAN_EQUAL = p(lambda x, y: x <= y)
+    IN = p(lambda x, y: x in y)
+    NOT_IN = p(lambda x, y: x not in y)
 
 
 class Filter:
