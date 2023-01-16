@@ -22,13 +22,17 @@ class FilterType(enum.Enum):
 
 class Filter:
 
-    def __init__(self, column: str, value: str, filter_type: FilterType):
+    def __init__(self, column: str, value: str, filter_type: FilterType, includes_empty: bool = False):
         self.val = value
         self.col = column
         self.filter_type = filter_type
+        self.includes_empty = includes_empty
 
     def apply(self, data: List[Dict[str, Any]]):
-        return [d for d in data if self.col in d and self.filter_type.value(d[self.col], self.val)]
+        if self.includes_empty:
+            return [d for d in data if self.col in d or self.filter_type.value(d[self.col], self.val)]
+        else:
+            return [d for d in data if self.col in d and self.filter_type.value(d[self.col], self.val)]
 
     def __str__(self):
         return f"FILTER: On \"{self.col}\" of type \"{self.filter_type.name}\" for condition \"{self.val}\""
