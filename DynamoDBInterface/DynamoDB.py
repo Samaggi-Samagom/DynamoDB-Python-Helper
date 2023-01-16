@@ -11,7 +11,7 @@ class FilterType(enum.Enum):
     EQUALS_NON_CS = p(lambda x, y: x.lower() == y.lower())
     NOT_EQUAL = p(lambda x, y: x != y)
     CONTAINS = p(lambda x, y: y in x)
-    NOT_CONTAINS = p(lambda x, y: y not in x)
+    NOT_CONTAIN = p(lambda x, y: y not in x)
     GREATER_THAN = p(lambda x, y: x > y)
     GREATER_THAN_EQUAL = p(lambda x, y: x >= y)
     LESS_THAN = p(lambda x, y: x < y)
