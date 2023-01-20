@@ -5,7 +5,7 @@ with open("README.md", 'r') as f:
 
 setup(
    name='DynamoDBInterface',
-   version='1.1.7a',
+   version='1.1.7b',
    description='Python Interface to Streamline Access to DynamoDB database tables.',
    long_description=long_description,
    author='Pakkapol Lailert',

@@ -82,7 +82,7 @@ class DatabaseQueryResult:
         data = copy.deepcopy(self.all())
         for elem in data:
             for x in self.columns():
-                if x in elem and x in columns:
+                if x in elem and x not in columns:
                     del elem[x]
 
         return DatabaseQueryResult({"Items": data})
