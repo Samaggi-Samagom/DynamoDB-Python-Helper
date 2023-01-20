@@ -197,14 +197,14 @@ class FilteredResponse(DatabaseQueryResult):
         self._original_data = original_query_response
 
         if last_filtered is not None:
-            data = last_filtered.dump()
+            data = copy.deepcopy(last_filtered.dump())
             if "Items" not in data:
                 super().__init__(data)
                 return
             data["Items"] = current_filter.apply(data["Items"])
             super().__init__(data)
         else:
-            data = original_query_response.dump()
+            data = copy.deepcopy(original_query_response.dump())
             if "Items" not in data:
                 super().__init__(data)
                 return
