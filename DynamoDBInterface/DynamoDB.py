@@ -85,6 +85,8 @@ class DatabaseQueryResult:
                 if x in elem and x in columns:
                     del elem[x]
 
+        return DatabaseQueryResult({"Items": data})
+
     def count_unique(self, key: str, ignores_empty: bool = True):
         return len(self.unique(key, ignores_empty))
 
