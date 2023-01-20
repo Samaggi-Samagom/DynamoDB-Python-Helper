@@ -66,17 +66,24 @@ class DatabaseQueryResult:
     def unique(self, key: str, ignores_empty: bool = True):
         return set([x[key] if key in x else None for x in self._items if key in x and ignores_empty])
 
-    def strip(self, keys:[str] = None, key:str = None):
+    def strip(self, keys:List[str] = None, key:str = None):
         if keys is None and key is None:
             return KeyError("Strip must receive either `keys` or `key` to strip")
 
-        data = copy.deepcopy(self._data)
+        data = copy.deepcopy(self.all())
         for elem in data:
             for x in (keys if keys is not None else [key]):
                 if x in elem:
                     del elem[x]
 
         return DatabaseQueryResult({"Items": data})
+
+    def select_columns(self, columns:List[str]):
+        data = copy.deepcopy(self.all())
+        for elem in data:
+            for x in self.columns():
+                if x in elem and x in columns:
+                    del elem[x]
 
     def count_unique(self, key: str, ignores_empty: bool = True):
         return len(self.unique(key, ignores_empty))
