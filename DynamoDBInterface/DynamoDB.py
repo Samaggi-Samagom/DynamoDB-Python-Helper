@@ -1,5 +1,10 @@
+from __future__ import annotations
+
+import copy
 import enum
 import string
+import warnings
+
 from boto3.dynamodb.conditions import Key
 import boto3
 from typing import List, Dict, Any
@@ -61,8 +66,38 @@ class DatabaseQueryResult:
     def unique(self, key: str, ignores_empty: bool = True):
         return set([x[key] if key in x else None for x in self._items if key in x and ignores_empty])
 
+    def strip(self, keys:[str] = None, key:str = None):
+        if keys is None and key is None:
+            return KeyError("Strip must receive either `keys` or `key` to strip")
+
+        data = copy.deepcopy(self._data)
+        for elem in data:
+            for x in (keys if keys is not None else [key]):
+                if x in elem:
+                    del elem[x]
+
+        return DatabaseQueryResult({"Items": data})
+
     def count_unique(self, key: str, ignores_empty: bool = True):
         return len(self.unique(key, ignores_empty))
+
+    def columns(self):
+        columns = []
+        for row in self.all():
+            columns += row.keys()
+        return set(columns)
+
+    def count_empty(self, key: str):
+        return len([True for x in self._items if key in x])
+
+    def join(self, _with: DatabaseQueryResult, using: str):
+        if using not in self.columns():
+            return self
+
+        if _with.count_unique(using) + _with.count_empty(using) != _with.length():
+            warnings.warn("WARNING: Completing JOIN using non-unique key on right.")
+
+        return NotImplementedError()
 
     def __getitem__(self, item):
         if isinstance(item, str):
