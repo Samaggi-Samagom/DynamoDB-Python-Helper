@@ -47,7 +47,7 @@ class Filter:
 class DatabaseQueryResult:
 
     def __init__(self, data):
-        self._data = data
+        self._data = copy.deepcopy(data)
         self._items = data["Items"] if "Items" in data else None
         self.__i = 0
         self.__i_mode = "NONE"
