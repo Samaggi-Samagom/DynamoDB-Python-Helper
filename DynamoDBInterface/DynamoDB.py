@@ -4,6 +4,7 @@ import copy
 import enum
 import string
 import warnings
+import csv
 
 from boto3.dynamodb.conditions import Key
 import boto3
@@ -261,7 +262,7 @@ class Table:
             if secondary_index_name is None:
                 secondary_index_name = self.gsi()[key]
             query = self._db.db_resource.Table(self._table_name).query(
-                IndexName=index_name,
+                IndexName=secondary_index_name,
                 KeyConditionExpression=Key(key).eq(equals),
                 ConsistentRead=consistent_read
             )
