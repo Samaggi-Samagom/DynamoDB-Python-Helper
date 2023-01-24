@@ -258,11 +258,14 @@ class Table:
     def get(self, key: str = None, equals: Any = None, is_secondary_index: bool = False,
             secondary_index_name: str = None, consistent_read: bool = False) -> DatabaseQueryResult:
         if equals is None:
+            equals = key
+            key = None
+        if equals is None:
             raise RuntimeError("`equals` must not be None.")
         if secondary_index_name is not None and not is_secondary_index:
             raise RuntimeError("Illegal argument, secondary index name provided unexpectedly.")
 
-        if not is_secondary_index or key == self.hash_key():
+        if not is_secondary_index or key == self.hash_key() or key is None:
             if key is None:
                 key = self.hash_key()
 
