@@ -224,23 +224,42 @@ class Table:
         self._table_name = table_name
         self._db: Database = db
 
+    def hash_key(self):
+        return self._db.db_resource.Table(self._table_name).key_schema[0]["AttributeName"]
+
+    def gsi(self):
+        gsi_map = {}
+        for x in self._db.db_resource.Table(self._table_name).global_secondary_indexes:
+            gsi_map[x["KeySchema"][0]["AttributeName"]] = x["IndexName"]
+        return gsi_map
+
     def there_exists(self, a_value: Any, at_column: str, is_secondary_index: bool = False,
                      secondary_index_name: str = None, consistent_read: bool = False):
         query = self.get(at_column, a_value, is_secondary_index, secondary_index_name, consistent_read)
 
         return query.exists()
 
-    def get(self, key: str, equals: Any, is_secondary_index: bool = False, secondary_index_name: str = None,
-            consistent_read: bool = False) -> DatabaseQueryResult:
+    def get(self, key: str = None, equals: Any = None, is_secondary_index: bool = False,
+            secondary_index_name: str = None, consistent_read: bool = False) -> DatabaseQueryResult:
+        if equals is None:
+            raise RuntimeError("`equals` must not be None.")
         if secondary_index_name is not None and not is_secondary_index:
             raise RuntimeError("Illegal argument, secondary index name provided unexpectedly.")
-        if not is_secondary_index:
+
+        if not is_secondary_index or key == self.hash_key():
+            if key is None:
+                key = self.hash_key()
+
             query = self._db.db_resource.Table(self._table_name).query(
                 KeyConditionExpression=Key(key).eq(equals),
                 ConsistentRead=consistent_read,
             )
         else:
-            index_name = secondary_index_name if secondary_index_name is not None else (key + "-index")
+            gsi = self.gsi()
+            if key not in gsi.keys():
+                raise RuntimeError("Key is not a secondary index!")
+            if secondary_index_name is None:
+                secondary_index_name = self.gsi()[key]
             query = self._db.db_resource.Table(self._table_name).query(
                 IndexName=index_name,
                 KeyConditionExpression=Key(key).eq(equals),
