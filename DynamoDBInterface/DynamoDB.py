@@ -152,6 +152,21 @@ class DatabaseQueryResult:
     def filter_using(self, f: Filter):
         return FilteredResponse(self, f)
 
+    def fill_empty(self, with_data: Any = None):
+        new_data = []
+        for data in self.all():
+            new_row = {}
+            for key in self.columns():
+                new_row[key] = data[key] if key in data else with_data
+            new_data.append(new_row)
+        return DatabaseQueryResult({"Items": new_data})
+
+    def to_csv(self, file_name: str):
+        with open(file_name, "w") as f:
+            writer = csv.DictWriter(f, self.columns())
+            writer.writeheader()
+            writer.writerows(self.fill_empty().all())
+
     def __next__(self):
         if self.__i_mode == "DICT":
             if self.__i >= len(self.first()) - 1:
