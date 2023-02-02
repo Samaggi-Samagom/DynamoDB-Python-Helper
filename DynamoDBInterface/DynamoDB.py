@@ -271,7 +271,7 @@ class Table:
 
         return query.exists()
 
-    def get(self, key: str = None, equals: Any = None, is_secondary_index: bool = False,
+    def get(self, key: str = None, equals: Any = None, is_secondary_index: bool = None,
             secondary_index_name: str = None, consistent_read: bool = False) -> DatabaseQueryResult:
         if equals is None:
             equals = key
@@ -281,7 +281,7 @@ class Table:
         if secondary_index_name is not None and not is_secondary_index:
             raise RuntimeError("Illegal argument, secondary index name provided unexpectedly.")
 
-        if not is_secondary_index or key == self.hash_key() or key is None:
+        if is_secondary_index is False or key is None or key == self.hash_key():
             if key is None:
                 key = self.hash_key()
 
@@ -311,24 +311,37 @@ class Table:
     def delete(self, where: str, equals: Any):
         self._db.db_resource.Table(self._table_name).delete_item(Key={where: equals})
 
-    def update(self, where: str, equals: Any, data_to_update: Dict[str, Any]):
-        if not data_to_update:
+    def update(self, key: str = None, equals: Any = None, data_to_update: Dict[str, Any] = None):
+        if not data_to_update or data_to_update is None:
             return
+
+        if equals is None:
+            equals = key
+            key = None
+        if equals is None:
+            raise RuntimeError("`equals` must not be None.")
+
+        if key != self.hash_key():
+            data = self.get(key=key, equals=equals)
+            if not data.exists():
+                return RuntimeError("Data with that value is not found. Use `write()` instead.")
+            equals = data[self.hash_key()]
+
+        key = self.hash_key()
 
         expression = "SET "
         expression_attr_val = {}
         expression_attr_name = {}
 
-        for i, (key, data) in enumerate(data_to_update.items()):
+        for i, (k, d) in enumerate(data_to_update.items()):
             expression += f"#{string.ascii_letters[2 * i]} = :{string.ascii_letters[2 * i + 1]}, "
-            expression_attr_name["#" + string.ascii_letters[2 * i]] = key
-            expression_attr_val[":" + string.ascii_letters[2 * i + 1]] = data
+            expression_attr_name["#" + string.ascii_letters[2 * i]] = k
+            expression_attr_val[":" + string.ascii_letters[2 * i + 1]] = d
 
         expression = expression[:-2]
 
-        key = {where: equals}
         self._db.db_resource.Table(self._table_name).update_item(
-            Key=key,
+            Key={key: equals},
             UpdateExpression=expression,
             ExpressionAttributeValues=expression_attr_val,
             ExpressionAttributeNames=expression_attr_name,
