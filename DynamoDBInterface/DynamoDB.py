@@ -60,7 +60,7 @@ class DatabaseQueryResult:
         return self._data
 
     def first(self):
-        return self._items[0]
+        return self._items[0] if len(self._items) > 0 else {}
 
     def last(self):
         return self._items[-1]
@@ -99,19 +99,28 @@ class DatabaseQueryResult:
         return set(columns)
 
     def count_empty(self, key: str):
-        return len([True for x in self._items if key in x])
+        return len([True for x in self._items if key not in x])
 
     def join(self, _with: DatabaseQueryResult, using: str):
         if using not in self.columns():
             return self
 
         if _with.count_unique(using) + _with.count_empty(using) != _with.length():
-            warnings.warn("WARNING: Completing JOIN using non-unique key on right.")
+            warnings.warn(f"WARNING: Completing JOIN using non-unique key on right.\nJOIN requested on {_with._table.name()} using {using}")
 
-        return NotImplementedError()
+        new_items = copy.deepcopy(self._items)
+
+        for item in new_items:
+            if using in item:
+                item.update(_with.get_where(using, item[using]))
+
+        return DatabaseQueryResult({"Items": new_items}, self._table)
 
     def get(self, value: str):
-        return self.filter(self._table.hash_key(), value, FilterType.EQUALS).first()
+        return self.get_where(self._table.hash_key(), value)
+
+    def get_where(self, key: str, value: str):
+        return self.filter(key, value, FilterType.EQUALS).first()
 
     def __getitem__(self, item):
         if isinstance(item, str):
@@ -243,6 +252,9 @@ class Table:
     def __init__(self, db, table_name: str):
         self._table_name = table_name
         self._db: Database = db
+
+    def name(self):
+        return self._table_name
 
     def hash_key(self):
         return self._db.db_resource.Table(self._table_name).key_schema[0]["AttributeName"]
