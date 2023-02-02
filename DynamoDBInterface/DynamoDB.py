@@ -46,9 +46,10 @@ class Filter:
 
 class DatabaseQueryResult:
 
-    def __init__(self, data):
+    def __init__(self, data, source_table):
         self._data = copy.deepcopy(data)
         self._items = data["Items"] if "Items" in data else None
+        self._table: Table = source_table
         self.__i = 0
         self.__i_mode = "NONE"
 
@@ -77,7 +78,7 @@ class DatabaseQueryResult:
                 if x in elem:
                     del elem[x]
 
-        return DatabaseQueryResult({"Items": data})
+        return DatabaseQueryResult({"Items": data}, self._table)
 
     def select_columns(self, columns:List[str]):
         data = copy.deepcopy(self.all())
@@ -86,7 +87,7 @@ class DatabaseQueryResult:
                 if x in elem and x not in columns:
                     del elem[x]
 
-        return DatabaseQueryResult({"Items": data})
+        return DatabaseQueryResult({"Items": data}, self._table)
 
     def count_unique(self, key: str, ignores_empty: bool = True):
         return len(self.unique(key, ignores_empty))
@@ -108,6 +109,9 @@ class DatabaseQueryResult:
             warnings.warn("WARNING: Completing JOIN using non-unique key on right.")
 
         return NotImplementedError()
+
+    def get(self, value: str):
+        return self.filter(self._table.hash_key(), value, FilterType.EQUALS).first()
 
     def __getitem__(self, item):
         if isinstance(item, str):
@@ -159,7 +163,7 @@ class DatabaseQueryResult:
             for key in self.columns():
                 new_row[key] = data[key] if key in data else with_data
             new_data.append(new_row)
-        return DatabaseQueryResult({"Items": new_data})
+        return DatabaseQueryResult({"Items": new_data}, self._table)
 
     def to_csv(self, file_name: str):
         with open(file_name, "w") as f:
@@ -215,18 +219,18 @@ class FilteredResponse(DatabaseQueryResult):
         if last_filtered is not None:
             data = copy.deepcopy(last_filtered.dump())
             if "Items" not in data:
-                super().__init__(data)
+                super().__init__(data, original_query_response._table)
                 return
             data["Items"] = current_filter.apply(data["Items"])
-            super().__init__(data)
+            super().__init__(data, original_query_response._table)
         else:
             data = copy.deepcopy(original_query_response.dump())
             if "Items" not in data:
-                super().__init__(data)
+                super().__init__(data, original_query_response._table)
                 return
             for f in self._filter_stack:
                 data["Items"] = f.apply(data["Items"])
-            super().__init__(data)
+            super().__init__(data, original_query_response._table)
 
     def filter_stack(self):
         return [str(f) for f in self._filter_stack]
@@ -285,7 +289,7 @@ class Table:
                 ConsistentRead=consistent_read
             )
 
-        return DatabaseQueryResult(query)
+        return DatabaseQueryResult(query, self)
 
     def write(self, values: Dict[str, Any]):
         self._db.db_resource.Table(self._table_name).put_item(
@@ -359,7 +363,7 @@ class Table:
             if "Items" in temp and len(temp["Items"]) >= 1:
                 scan_result += temp["Items"]
 
-        return DatabaseQueryResult({"Items": scan_result})
+        return DatabaseQueryResult({"Items": scan_result}, self)
 
 
 class KeyValueTable(Table):
