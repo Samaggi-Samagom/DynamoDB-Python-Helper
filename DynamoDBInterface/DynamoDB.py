@@ -174,9 +174,18 @@ class DatabaseQueryResult:
             new_data.append(new_row)
         return DatabaseQueryResult({"Items": new_data}, self._table)
 
-    def to_csv(self, file_name: str):
+    def to_csv(self, file_name: str, col_order_left: List[str] = None, col_order_right: List[str] = None):
+        if col_order_left is None:
+            col_order_left = []
+        if col_order_right is None:
+            col_order_right = []
+
+        col_order_right = list(set(col_order_right) - set(col_order_left))
+        norm_col = sorted(list(set(self.columns()) - set(col_order_right) - set(col_order_left)))
+        columns = col_order_left + norm_col + col_order_right
+
         with open(file_name, "w") as f:
-            writer = csv.DictWriter(f, self.columns())
+            writer = csv.DictWriter(f, columns)
             writer.writeheader()
             writer.writerows(self.fill_empty().all())
 
