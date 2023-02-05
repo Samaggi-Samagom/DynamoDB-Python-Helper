@@ -417,7 +417,7 @@ class KeyValueTable(Table):
 
     def set(self, for_key: str, new_value: Any):
         self.update(
-            where=self._key_col_name, equals=for_key,
+            for_key,
             data_to_update={
                 self._val_col_name: new_value
             }
