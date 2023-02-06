@@ -36,7 +36,7 @@ class Filter:
 
     def apply(self, data: List[Dict[str, Any]]):
         if self.includes_empty:
-            return [d for d in data if self.col in d or self.filter_type.value(d[self.col], self.val)]
+            return [d for d in data if self.col not in d or self.filter_type.value(d[self.col], self.val)]
         else:
             return [d for d in data if self.col in d and self.filter_type.value(d[self.col], self.val)]
 
