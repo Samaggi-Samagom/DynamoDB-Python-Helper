@@ -158,7 +158,7 @@ class DatabaseQueryResult:
     def all(self):
         return self._items if self._items is not None else []
 
-    def filter(self, column: str, value: str, filter_type: FilterType = FilterType.EQUALS,
+    def filter(self, column: str, value: Any, filter_type: FilterType = FilterType.EQUALS,
                includes_empty: bool = False):
         return self.filter_using(Filter(column, value, filter_type, includes_empty))
 
