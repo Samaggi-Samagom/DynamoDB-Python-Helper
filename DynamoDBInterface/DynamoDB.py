@@ -274,8 +274,10 @@ class Table:
             gsi_map[x["KeySchema"][0]["AttributeName"]] = x["IndexName"]
         return gsi_map
 
-    def there_exists(self, a_value: Any, at_column: str, is_secondary_index: bool = False,
+    def there_exists(self, a_value: Any, at_column: str = None, is_secondary_index: bool = False,
                      secondary_index_name: str = None, consistent_read: bool = False):
+        if at_column is None:
+            at_column = self.hash_key()
         query = self.get(at_column, a_value, is_secondary_index, secondary_index_name, consistent_read)
 
         return query.exists()
