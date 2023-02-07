@@ -89,7 +89,16 @@ class DatabaseQueryResult:
 
         return DatabaseQueryResult({"Items": data}, self._table)
 
-    def count_unique(self, key: str, ignores_empty: bool = True):
+    def count_occurrence(self, key: str):
+        count = {}
+        for item in self._items:
+            if item[key] not in count:
+                count[item[key]] = 1
+            else:
+                count[item[key]] += 1
+        return count
+
+    def num_unique(self, key: str, ignores_empty: bool = True):
         return len(self.unique(key, ignores_empty))
 
     def columns(self):
@@ -105,7 +114,7 @@ class DatabaseQueryResult:
         if using not in self.columns():
             return self
 
-        if _with.count_unique(using) + _with.count_empty(using) != _with.length():
+        if _with.num_unique(using) + _with.count_empty(using) != _with.length():
             warnings.warn(f"WARNING: Completing JOIN using non-unique key on right.\nJOIN requested on {_with._table.name()} using {using}")
 
         new_items = copy.deepcopy(self._items)
