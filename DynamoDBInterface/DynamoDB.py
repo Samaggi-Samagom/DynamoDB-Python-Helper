@@ -286,7 +286,7 @@ class Table:
     def there_exists(self, a_value: Any, at_column: str = None, consistent_read: bool = False):
         if at_column is None:
             at_column = self.hash_key()
-        query = self.get(at_column, a_value, consistent_read)
+        query = self.get(key=at_column, equals=a_value, consistent_read=consistent_read)
 
         return query.exists()
 
