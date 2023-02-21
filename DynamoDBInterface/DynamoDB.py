@@ -89,11 +89,14 @@ class DatabaseQueryResult:
 
         return DatabaseQueryResult({"Items": data}, self._table)
 
-    def apply(self, function: Callable[[Any], Any], col: str) -> DatabaseQueryResult:
+    def apply(self, function: Callable[[Any], Any], col: str, new_col: str = None) -> DatabaseQueryResult:
+        if new_col is None:
+            new_col = col
+
         data = copy.deepcopy(self.all())
         for elem in data:
             if col in elem:
-                elem[col] = function(elem[col])
+                elem[new_col] = function(elem[col])
 
         return DatabaseQueryResult({"Items": data}, self._table)
 
