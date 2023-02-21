@@ -8,7 +8,7 @@ import csv
 
 from boto3.dynamodb.conditions import Key
 import boto3
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Callable
 from functools import partial as p
 
 
@@ -86,6 +86,14 @@ class DatabaseQueryResult:
             for x in self.columns():
                 if x in elem and x not in columns:
                     del elem[x]
+
+        return DatabaseQueryResult({"Items": data}, self._table)
+
+    def apply(self, function: Callable[[Any], Any], col: str) -> DatabaseQueryResult:
+        data = copy.deepcopy(self.all())
+        for elem in data:
+            if col in elem:
+                elem[col] = function(elem[col])
 
         return DatabaseQueryResult({"Items": data}, self._table)
 
