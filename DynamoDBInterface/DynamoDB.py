@@ -112,6 +112,11 @@ class DatabaseQueryResult:
     def num_unique(self, key: str, ignores_empty: bool = True) -> int:
         return len(self.unique(key, ignores_empty))
 
+    def column(self, key: str, includes_empty: bool = False, replace_empty: Any = None) -> List[Any]:
+        if replace_empty is not None and not includes_empty:
+            raise KeyError("Value for `replace_empty` provided but `includes_empty` is False")
+        return [v[key] if key in v else replace_empty for v in self._items if key in v or includes_empty]
+
     def columns(self) -> Set[str]:
         columns = []
         for row in self.all():
