@@ -8,7 +8,7 @@ import csv
 
 from boto3.dynamodb.conditions import Key
 import boto3
-from typing import List, Dict, Any, Callable
+from typing import List, Dict, Any, Callable, Set
 from functools import partial as p
 
 
@@ -53,24 +53,24 @@ class DatabaseQueryResult:
         self.__i = 0
         self.__i_mode = "NONE"
 
-    def exists(self):
+    def exists(self) -> bool:
         return self._items is not None and len(self._items) != 0
 
     def dump(self):
         return self._data
 
-    def first(self):
+    def first(self) -> Dict[str, Any]:
         return self._items[0] if len(self._items) > 0 else {}
 
-    def last(self):
+    def last(self) -> Dict[str, Any]:
         return self._items[-1]
 
-    def unique(self, key: str, ignores_empty: bool = True):
+    def unique(self, key: str, ignores_empty: bool = True) -> Set[Any]:
         return set([x[key] if key in x else None for x in self._items if key in x and ignores_empty])
 
-    def strip(self, keys:List[str] = None, key:str = None):
+    def strip(self, keys:List[str] = None, key:str = None) -> DatabaseQueryResult:
         if keys is None and key is None:
-            return KeyError("Strip must receive either `keys` or `key` to strip")
+            raise KeyError("Strip must receive either `keys` or `key` to strip")
 
         data = copy.deepcopy(self.all())
         for elem in data:
@@ -80,7 +80,7 @@ class DatabaseQueryResult:
 
         return DatabaseQueryResult({"Items": data}, self._table)
 
-    def select_columns(self, columns:List[str]):
+    def select_columns(self, columns:List[str]) -> DatabaseQueryResult:
         data = copy.deepcopy(self.all())
         for elem in data:
             for x in self.columns():
@@ -100,7 +100,7 @@ class DatabaseQueryResult:
 
         return DatabaseQueryResult({"Items": data}, self._table)
 
-    def count_occurrence(self, key: str):
+    def count_occurrence(self, key: str) -> Dict[Any, int]:
         count = {}
         for item in self._items:
             if item[key] not in count:
@@ -109,19 +109,19 @@ class DatabaseQueryResult:
                 count[item[key]] += 1
         return count
 
-    def num_unique(self, key: str, ignores_empty: bool = True):
+    def num_unique(self, key: str, ignores_empty: bool = True) -> int:
         return len(self.unique(key, ignores_empty))
 
-    def columns(self):
+    def columns(self) -> Set[str]:
         columns = []
         for row in self.all():
             columns += row.keys()
         return set(columns)
 
-    def count_empty(self, key: str):
+    def count_empty(self, key: str) -> int:
         return len([True for x in self._items if key not in x])
 
-    def join(self, _with: DatabaseQueryResult, using: str):
+    def join(self, _with: DatabaseQueryResult, using: str) -> DatabaseQueryResult:
         if using not in self.columns():
             return self
 
@@ -136,10 +136,10 @@ class DatabaseQueryResult:
 
         return DatabaseQueryResult({"Items": new_items}, self._table)
 
-    def get(self, value: str):
+    def get(self, value: str) -> Dict[str, Any]:
         return self.get_where(self._table.hash_key(), value)
 
-    def get_where(self, key: str, value: str):
+    def get_where(self, key: str, value: str) -> Dict[str, Any]:
         return self.filter(key, value, FilterType.EQUALS).first()
 
     def __getitem__(self, item):
@@ -153,7 +153,7 @@ class DatabaseQueryResult:
                 raise IndexError("Cannot call __get_item__() as query returned no result.")
         return self._items[item]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         if isinstance(key, str):
             if self.length() == 1:
                 self._items[0][key] = value
@@ -163,29 +163,29 @@ class DatabaseQueryResult:
             else:
                 raise IndexError("Cannot call __setitem__() as query returned no result.")
 
-    def length(self):
+    def length(self) -> int:
         return len(self._items)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.length()
 
-    def is_unique(self):
+    def is_unique(self) -> bool:
         return self.length() == 1
 
-    def value(self):
+    def value(self) -> Any:
         return self.first()["value"]
 
-    def all(self):
+    def all(self) -> List[Dict[str, Any]]:
         return self._items if self._items is not None else []
 
     def filter(self, column: str, value: Any, filter_type: FilterType = FilterType.EQUALS,
-               includes_empty: bool = False):
+               includes_empty: bool = False) -> FilteredResponse:
         return self.filter_using(Filter(column, value, filter_type, includes_empty))
 
-    def filter_using(self, f: Filter):
+    def filter_using(self, f: Filter) -> FilteredResponse:
         return FilteredResponse(self, f)
 
-    def fill_empty(self, with_data: Any = None):
+    def fill_empty(self, with_data: Any = None) -> DatabaseQueryResult:
         new_data = []
         for data in self.all():
             new_row = {}
@@ -194,7 +194,7 @@ class DatabaseQueryResult:
             new_data.append(new_row)
         return DatabaseQueryResult({"Items": new_data}, self._table)
 
-    def to_csv(self, file_name: str, col_order_left: List[str] = None, col_order_right: List[str] = None):
+    def to_csv(self, file_name: str, col_order_left: List[str] = None, col_order_right: List[str] = None) -> None:
         if col_order_left is None:
             col_order_left = []
         if col_order_right is None:
@@ -270,10 +270,10 @@ class FilteredResponse(DatabaseQueryResult):
                 data["Items"] = f.apply(data["Items"])
             super().__init__(data, original_query_response._table)
 
-    def filter_stack(self):
+    def filter_stack(self) -> List[str]:
         return [str(f) for f in self._filter_stack]
 
-    def filter_using(self, f: Filter):
+    def filter_using(self, f: Filter) -> FilteredResponse:
         return FilteredResponse(self._original_data, f, self._filter_stack, self)
 
 
@@ -282,19 +282,19 @@ class Table:
         self._table_name = table_name
         self._db: Database = db
 
-    def name(self):
+    def name(self) -> str:
         return self._table_name
 
-    def hash_key(self):
+    def hash_key(self) -> str:
         return self._db.db_resource.Table(self._table_name).key_schema[0]["AttributeName"]
 
-    def gsi(self):
+    def gsi(self) -> Dict[str, str]:
         gsi_map = {}
         for x in self._db.db_resource.Table(self._table_name).global_secondary_indexes:
             gsi_map[x["KeySchema"][0]["AttributeName"]] = x["IndexName"]
         return gsi_map
 
-    def there_exists(self, a_value: Any, at_column: str = None, consistent_read: bool = False):
+    def there_exists(self, a_value: Any, at_column: str = None, consistent_read: bool = False) -> bool:
         if at_column is None:
             at_column = self.hash_key()
         query = self.get(key=at_column, equals=a_value, consistent_read=consistent_read)
@@ -333,15 +333,15 @@ class Table:
 
         return DatabaseQueryResult(query, self)
 
-    def write(self, values: Dict[str, Any]):
+    def write(self, values: Dict[str, Any]) -> None:
         self._db.db_resource.Table(self._table_name).put_item(
             Item=values
         )
 
-    def delete(self, where: str, equals: Any):
+    def delete(self, where: str, equals: Any) -> None:
         self._db.db_resource.Table(self._table_name).delete_item(Key={where: equals})
 
-    def update(self, key: str = None, equals: Any = None, data_to_update: Dict[str, Any] = None):
+    def update(self, key: str = None, equals: Any = None, data_to_update: Dict[str, Any] = None) -> None:
         if not data_to_update or data_to_update is None:
             return
 
@@ -354,7 +354,7 @@ class Table:
         if key != self.hash_key():
             data = self.get(key=key, equals=equals)
             if not data.exists():
-                return RuntimeError("Data with that value is not found. Use `write()` instead.")
+                raise RuntimeError("Data with that value is not found. Use `write()` instead.")
             equals = data[self.hash_key()]
 
         key = self.hash_key()
@@ -377,7 +377,7 @@ class Table:
             ExpressionAttributeNames=expression_attr_name,
         )
 
-    def relative_update(self, where: str, equals: str, update: str, by: int, using_operation: str):
+    def relative_update(self, where: str, equals: str, update: str, by: int, using_operation: str) -> None:
         expression = f"SET #a = #a {using_operation} :b"
         expression_attr_name = {
             "#a": update
@@ -394,10 +394,10 @@ class Table:
             ExpressionAttributeNames=expression_attr_name
         )
 
-    def increment(self, where: str, equals: str, value_key: str, by: int):
+    def increment(self, where: str, equals: str, value_key: str, by: int) -> None:
         self.relative_update(where, equals, update=value_key, by=by, using_operation="+")
 
-    def decrement(self, where: str, equals: str, value_key: str, by: int):
+    def decrement(self, where: str, equals: str, value_key: str, by: int) -> None:
         self.relative_update(where, equals, update=value_key, by=by, using_operation="-")
 
     def scan(self, consistent_read: bool = False) -> DatabaseQueryResult:
@@ -428,7 +428,7 @@ class KeyValueTable(Table):
         self._key_col_name = key_col_name
         self._val_col_name = val_col_name
 
-    def value(self, for_key: str):
+    def value(self, for_key: str) -> Any:
         res = self.get(self._key_col_name, equals=for_key)
 
         if not res.exists():
@@ -436,7 +436,7 @@ class KeyValueTable(Table):
 
         return res.first()[self._val_col_name]
 
-    def set(self, for_key: str, new_value: Any):
+    def set(self, for_key: str, new_value: Any) -> None:
         self.update(
             for_key,
             data_to_update={
@@ -462,10 +462,10 @@ class Database:
     def table(self, table_name) -> Table:
         return Table(self, table_name)
 
-    def key_value_table(self, table_name, key_column_name="data-id", value_column_name="value"):
+    def key_value_table(self, table_name, key_column_name="data-id", value_column_name="value") -> KeyValueTable:
         return KeyValueTable(self, table_name, key_column_name, value_column_name)
 
-    def globals(self):
+    def globals(self) -> KeyValueTable:
         return self.key_value_table(
             self._global_data_table_name,
             self._global_data_config["key_column_name"],
