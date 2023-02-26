@@ -355,6 +355,10 @@ class Table:
         if not data_to_update or data_to_update is None:
             return
 
+        for key, value in data_to_update.items():
+            if isinstance(value, float) or isinstance(value, int):
+                data_to_update[key] = Decimal(str(value))
+
         if equals is None:
             equals = key
             key = None
