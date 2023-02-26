@@ -340,9 +340,7 @@ class Table:
         return DatabaseQueryResult(query, self)
 
     def write(self, values: Dict[str, Any]) -> None:
-        for key, value in values.items():
-            if isinstance(value, float) or isinstance(value, int) and not isinstance(value, bool):
-                values[key] = Decimal(str(value))
+        values = self.__convert_to_decimal(values)
 
         self._db.db_resource.Table(self._table_name).put_item(
             Item=values
@@ -351,13 +349,26 @@ class Table:
     def delete(self, where: str, equals: Any) -> None:
         self._db.db_resource.Table(self._table_name).delete_item(Key={where: equals})
 
+    def __convert_to_decimal(self, x):
+        if isinstance(x, float) or isinstance(x, int) and not isinstance(x, bool):
+            return Decimal(str(x))
+        if isinstance(x, list):
+            new_list = []
+            for v in x:
+                new_list.append(self.__convert_to_decimal(v))
+            return new_list
+        if isinstance(x, dict):
+            new_dict = {}
+            for key, value in x.items():
+                new_dict[key] = self.__convert_to_decimal(value)
+            return new_dict
+        return x
+
     def update(self, key: str = None, equals: Any = None, data_to_update: Dict[str, Any] = None) -> None:
         if not data_to_update or data_to_update is None:
             return
 
-        for key, value in data_to_update.items():
-            if isinstance(value, float) or isinstance(value, int) and not isinstance(value, bool):
-                data_to_update[key] = Decimal(str(value))
+        data_to_update = self.__convert_to_decimal(data_to_update)
 
         if equals is None:
             equals = key
