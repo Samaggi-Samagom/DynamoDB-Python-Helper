@@ -365,7 +365,7 @@ class Table:
         if equals is None:
             raise RuntimeError("`equals` must not be None.")
 
-        if key != self.hash_key():
+        if key is not None and key != self.hash_key():
             data = self.get(key=key, equals=equals)
             if not data.exists():
                 raise RuntimeError("Data with that value is not found. Use `write()` instead.")
