@@ -5,11 +5,12 @@ import enum
 import string
 import warnings
 import csv
+import boto3
 
 from boto3.dynamodb.conditions import Key
-import boto3
 from typing import List, Dict, Any, Callable, Set
 from functools import partial as p
+from decimal import Decimal
 
 
 class FilterType(enum.Enum):
@@ -339,6 +340,10 @@ class Table:
         return DatabaseQueryResult(query, self)
 
     def write(self, values: Dict[str, Any]) -> None:
+        for key, value in values.items():
+            if isinstance(value, float) or isinstance(value, int):
+                values[key] = Decimal(str(value))
+
         self._db.db_resource.Table(self._table_name).put_item(
             Item=values
         )
