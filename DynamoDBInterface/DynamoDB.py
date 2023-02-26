@@ -341,7 +341,7 @@ class Table:
 
     def write(self, values: Dict[str, Any]) -> None:
         for key, value in values.items():
-            if isinstance(value, float) or isinstance(value, int):
+            if isinstance(value, float) or isinstance(value, int) and not isinstance(value, bool):
                 values[key] = Decimal(str(value))
 
         self._db.db_resource.Table(self._table_name).put_item(
@@ -356,7 +356,7 @@ class Table:
             return
 
         for key, value in data_to_update.items():
-            if isinstance(value, float) or isinstance(value, int):
+            if isinstance(value, float) or isinstance(value, int) and not isinstance(value, bool):
                 data_to_update[key] = Decimal(str(value))
 
         if equals is None:
