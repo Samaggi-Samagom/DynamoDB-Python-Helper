@@ -105,7 +105,6 @@ class DatabaseQueryResult:
         for elem in data:
             args_data = [elem[col] for col in args if col in elem]
             if len(args_data) == len(args):
-                args_data = [elem[col] for col in args]
                 elem[new_col] = function(*args_data)
             else:
                 param_error = True
@@ -212,6 +211,17 @@ class DatabaseQueryResult:
             for key in self.columns():
                 new_row[key] = data[key] if key in data else with_data
             new_data.append(new_row)
+        return DatabaseQueryResult({"Items": new_data}, self._table)
+
+    def sort(self, using: str | List[str]) -> DatabaseQueryResult:
+        data = copy.deepcopy(self._data)
+        if type(using) == str:
+            new_data = sorted(data, key=lambda x: x[using])
+        elif type(using) == list:
+            new_data = sorted(data, key=lambda x: tuple([x[k] for k in using]))
+        else:
+            raise RuntimeError("Invalid Sort Key")
+
         return DatabaseQueryResult({"Items": new_data}, self._table)
 
     def to_csv(self, file_name: str, col_order_left: List[str] = None, col_order_right: List[str] = None) -> None:
