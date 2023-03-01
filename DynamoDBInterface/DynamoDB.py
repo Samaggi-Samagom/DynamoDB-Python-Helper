@@ -90,14 +90,28 @@ class DatabaseQueryResult:
 
         return DatabaseQueryResult({"Items": data}, self._table)
 
-    def apply(self, function: Callable[[Any], Any], col: str, new_col: str = None) -> DatabaseQueryResult:
+    def apply(self, function: Callable[[Any], Any], *args, new_col: str = None) -> DatabaseQueryResult:
+        if len(args) == 0:
+            raise RuntimeError("Must provide a column to apply function to.")
         if new_col is None:
-            new_col = col
+            if len(args) > 1:
+                warnings.warn("Calling `.apply()` with multiple columns but `new_col` not provided. Data will "
+                              "overwrite the first column provided.")
+            new_col = args[0]
+
+        param_error = False
 
         data = copy.deepcopy(self.all())
         for elem in data:
-            if col in elem:
-                elem[new_col] = function(elem[col])
+            args_data = [elem[col] for col in args if col in elem]
+            if len(args_data) == len(args):
+                args_data = [elem[col] for col in args]
+                elem[new_col] = function(*args_data)
+            else:
+                param_error = True
+
+        if param_error:
+            warnings.warn("Function was not applied on some row as value required does not exist for all column(s)")
 
         return DatabaseQueryResult({"Items": data}, self._table)
 
