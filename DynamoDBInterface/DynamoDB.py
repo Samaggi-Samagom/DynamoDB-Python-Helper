@@ -69,13 +69,10 @@ class DatabaseQueryResult:
     def unique(self, key: str, ignores_empty: bool = True) -> Set[Any]:
         return set([x[key] if key in x else None for x in self._items if key in x and ignores_empty])
 
-    def strip(self, keys:List[str] = None, key:str = None) -> DatabaseQueryResult:
-        if keys is None and key is None:
-            raise KeyError("Strip must receive either `keys` or `key` to strip")
-
+    def strip(self, k: str | List[str]) -> DatabaseQueryResult:
         data = copy.deepcopy(self.all())
         for elem in data:
-            for x in (keys if keys is not None else [key]):
+            for x in ([k] if type(k) == str else k):
                 if x in elem:
                     del elem[x]
 
