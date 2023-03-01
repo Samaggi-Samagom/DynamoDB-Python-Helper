@@ -213,12 +213,12 @@ class DatabaseQueryResult:
             new_data.append(new_row)
         return DatabaseQueryResult({"Items": new_data}, self._table)
 
-    def sort(self, using: str | List[str]) -> DatabaseQueryResult:
-        data = copy.deepcopy(self._data)
+    def sort(self, using: str | List[str], reverse: bool = False) -> DatabaseQueryResult:
+        data = copy.deepcopy(self._items)
         if type(using) == str:
-            new_data = sorted(data, key=lambda x: x[using])
+            new_data = sorted(data, key=lambda x: x[using], reverse=reverse)
         elif type(using) == list:
-            new_data = sorted(data, key=lambda x: tuple([x[k] for k in using]))
+            new_data = sorted(data, key=lambda x: tuple([x[k] for k in using]), reverse=reverse)
         else:
             raise RuntimeError("Invalid Sort Key")
 
