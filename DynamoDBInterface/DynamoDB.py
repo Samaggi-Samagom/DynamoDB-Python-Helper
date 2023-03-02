@@ -317,7 +317,10 @@ class Table:
 
     def gsi(self) -> Dict[str, str]:
         gsi_map = {}
-        for x in self._db.db_resource.Table(self._table_name).global_secondary_indexes:
+        gsi_data = self._db.db_resource.Table(self._table_name).global_secondary_indexes
+        if gsi_data is None:
+            return {}
+        for x in gsi_data:
             gsi_map[x["KeySchema"][0]["AttributeName"]] = x["IndexName"]
         return gsi_map
 
