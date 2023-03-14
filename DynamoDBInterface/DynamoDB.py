@@ -345,6 +345,9 @@ class Table:
             if key is None:
                 key = self.hash_key()
 
+            if equals == "" or key == "":
+                return DatabaseQueryResult({}, self)
+
             query = self._db.db_resource.Table(self._table_name).query(
                 KeyConditionExpression=Key(key).eq(equals),
                 ConsistentRead=consistent_read,
@@ -355,6 +358,8 @@ class Table:
                 raise RuntimeError("Key is not a secondary index!")
             if secondary_index_name is None:
                 secondary_index_name = self.gsi()[key]
+            if equals == "" or key == "":
+                return DatabaseQueryResult({}, self)
             query = self._db.db_resource.Table(self._table_name).query(
                 IndexName=secondary_index_name,
                 KeyConditionExpression=Key(key).eq(equals),
