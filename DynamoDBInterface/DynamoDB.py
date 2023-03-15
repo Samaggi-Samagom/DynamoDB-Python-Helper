@@ -431,7 +431,25 @@ class Table:
             ExpressionAttributeNames=expression_attr_name,
         )
 
-    def relative_update(self, where: str, equals: str, update: str, by: int, using_operation: str) -> None:
+    def relative_update(self, key: str = None, equals: str = None, update: str = None, by: int = None,
+                        using_operation: str = None) -> None:
+        if update is None or by is None or using_operation is None:
+            raise RuntimeError("Expects non-empty `update`, `by` and `using_operation`")
+
+        if equals is None:
+            equals = key
+            key = None
+        if equals is None:
+            raise RuntimeError("`equals` must not be None.")
+
+        if key is not None and key != self.hash_key():
+            data = self.get(key=key, equals=equals)
+            if not data.exists():
+                raise RuntimeError("Data with that value is not found. Use `write()` instead.")
+            equals = data[self.hash_key()]
+
+        key = self.hash_key()
+
         expression = f"SET #a = #a {using_operation} :b"
         expression_attr_name = {
             "#a": update
@@ -440,19 +458,18 @@ class Table:
             ":b": by
         }
 
-        key = {where: equals}
         self._db.db_resource.Table(self._table_name).update_item(
-            Key=key,
+            Key={key: equals},
             UpdateExpression=expression,
             ExpressionAttributeValues=expression_attr_val,
             ExpressionAttributeNames=expression_attr_name
         )
 
-    def increment(self, where: str, equals: str, value_key: str, by: int) -> None:
-        self.relative_update(where, equals, update=value_key, by=by, using_operation="+")
+    def increment(self, key: str = None, equals: str = None, value_key: str = None, by: int = None) -> None:
+        self.relative_update(key, equals, update=value_key, by=by, using_operation="+")
 
-    def decrement(self, where: str, equals: str, value_key: str, by: int) -> None:
-        self.relative_update(where, equals, update=value_key, by=by, using_operation="-")
+    def decrement(self, key: str = None, equals: str = None, value_key: str = None, by: int = None) -> None:
+        self.relative_update(key, equals, update=value_key, by=by, using_operation="-")
 
     def scan(self, consistent_read: bool = False) -> DatabaseQueryResult:
         scan_result = []
