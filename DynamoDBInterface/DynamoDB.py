@@ -236,6 +236,38 @@ class DatabaseQueryResult:
             writer.writeheader()
             writer.writerows(self.fill_empty().all())
 
+    def insert(self, d: Any, as_column: str) -> DatabaseQueryResult:
+        data = copy.deepcopy(self._items)
+
+        for v in data:
+            v.update({as_column: d})
+
+        return DatabaseQueryResult({"Items": data}, self._table)
+
+    def rename(self, column: str, to_new_name: str) -> DatabaseQueryResult:
+        data = copy.deepcopy(self._items)
+
+        for v in data:
+            if column in v:
+                v[to_new_name] = v[column]
+                del v[column]
+
+        return DatabaseQueryResult({"Items": data}, self._table)
+
+
+    def remap_columns(self, m: Dict[str, str]) -> DatabaseQueryResult:
+        data = copy.deepcopy(self._items)
+
+        for row in data:
+            for old, new in m.items():
+                if old in row:
+                    row[new] = row[old]
+                    del row[old]
+                    break
+
+        return DatabaseQueryResult({"Items": data}, self._table)
+
+
     def __next__(self):
         if self.__i_mode == "DICT":
             if self.__i >= len(self.first()) - 1:
