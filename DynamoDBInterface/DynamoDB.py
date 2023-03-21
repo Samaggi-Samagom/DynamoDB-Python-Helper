@@ -263,7 +263,7 @@ class DatabaseQueryResult:
                 if old in row:
                     row[new] = row[old]
                     del row[old]
-                    break
+                    continue
 
         return DatabaseQueryResult({"Items": data}, self._table)
 
