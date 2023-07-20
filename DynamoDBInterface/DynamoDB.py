@@ -152,11 +152,17 @@ class DatabaseQueryResult:
 
         return DatabaseQueryResult({"Items": new_items}, self._table)
 
-    def get(self, value: str) -> Dict[str, Any]:
+    def get(self, value: str) -> DatabaseQueryResult:
         return self.get_where(self._table.hash_key(), value)
 
-    def get_where(self, key: str, value: str) -> Dict[str, Any]:
-        return self.filter(key, value, FilterType.EQUALS).first()
+    def get_where(self, key: str, value: str) -> DatabaseQueryResult:
+        return self.filter(key, value, FilterType.EQUALS)
+
+    def get_dict(self, value: str) -> Dict[str, Any]:
+        return self.get(value).first()
+
+    def get_dict_where(self, key: str, value: str):
+        return self.get_where(key, value).first()
 
     def __getitem__(self, item):
         if isinstance(item, str):
