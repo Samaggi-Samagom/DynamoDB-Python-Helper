@@ -8,7 +8,7 @@ import csv
 import boto3
 
 from boto3.dynamodb.conditions import Key
-from typing import List, Dict, Any, Callable, Set
+from typing import List, Dict, Any, Callable, Set, Optional
 from functools import partial as p
 from decimal import Decimal
 
@@ -346,21 +346,26 @@ class Table:
     def __init__(self, db, table_name: str):
         self._table_name = table_name
         self._db: Database = db
+        self._hash_key: Optional[str] = None
+        self._gsi: Optional[Dict[str, str]] = None
 
     def name(self) -> str:
         return self._table_name
 
-    def hash_key(self) -> str:
+    def hash_key(self, force_update: bool = False) -> str:
+        if self._hash_key is None or force_update:
+            self._hash_key = self._db.db_resource.Table(self._table_name).key_schema[0]["AttributeName"]
         return self._db.db_resource.Table(self._table_name).key_schema[0]["AttributeName"]
 
-    def gsi(self) -> Dict[str, str]:
-        gsi_map = {}
-        gsi_data = self._db.db_resource.Table(self._table_name).global_secondary_indexes
-        if gsi_data is None:
-            return {}
-        for x in gsi_data:
-            gsi_map[x["KeySchema"][0]["AttributeName"]] = x["IndexName"]
-        return gsi_map
+    def gsi(self, force_update: bool = False) -> Dict[str, str]:
+        if self._gsi is None or force_update:
+            self._gsi = {}
+            gsi_data = self._db.db_resource.Table(self._table_name).global_secondary_indexes
+            if gsi_data is None:
+                return {}
+            for x in gsi_data:
+                self._gsi[x["KeySchema"][0]["AttributeName"]] = x["IndexName"]
+        return self._gsi
 
     def there_exists(self, a_value: Any, at_column: str = None, consistent_read: bool = False) -> bool:
         if at_column is None:
@@ -568,8 +573,12 @@ class Database:
 
         self._global_data_config: Dict[str, str] = global_data_table_config
 
-    def table(self, table_name) -> Table:
-        return Table(self, table_name)
+        self._table_cache = {}
+
+    def table(self, table_name: str, forced_update: bool = False) -> Table:
+        if table_name not in self._table_cache or forced_update:
+            self._table_cache[table_name] = Table(self, table_name)
+        return self._table_cache[table_name]
 
     def key_value_table(self, table_name, key_column_name="data-id", value_column_name="value") -> KeyValueTable:
         return KeyValueTable(self, table_name, key_column_name, value_column_name)
