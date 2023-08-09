@@ -418,8 +418,18 @@ class Table:
             Item=values
         )
 
-    def delete(self, where: str, equals: Any) -> None:
-        self._db.db_resource.Table(self._table_name).delete_item(Key={where: equals})
+    def delete(self, key: str = None, equals: Any = None) -> None:
+        if equals is None:
+            equals = key
+            key = None
+        if equals is None:
+            raise RuntimeError("`equals` must not be None.")
+        if key is None or key == self.hash_key():
+            key = self.hash_key()
+            self._db.db_resource.Table(self._table_name).delete_item(Key={key: equals})
+        else:
+            raise NotImplementedError("Deleting with a secondary index is not yet available.")
+
 
     def __convert_to_decimal(self, x):
         if isinstance(x, float) or isinstance(x, int) and not isinstance(x, bool):
