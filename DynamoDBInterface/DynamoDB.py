@@ -398,7 +398,9 @@ class Table:
         else:
             gsi = self.gsi()
             if key not in gsi.keys():
-                raise RuntimeError("Key is not a secondary index!")
+                gsi = self.gsi(force_update=True)
+                if key not in gsi.keys():
+                    raise RuntimeError("Key is not a secondary index!")
             if secondary_index_name is None:
                 secondary_index_name = self.gsi()[key]
             if equals == "" or key == "":
