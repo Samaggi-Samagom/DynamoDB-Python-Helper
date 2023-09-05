@@ -555,7 +555,7 @@ class KeyValueTable(Table):
         self._val_col_name = val_col_name
 
     def value(self, for_key: str) -> Any:
-        res = self.get(self._key_col_name, equals=for_key)
+        res = self.get(self._key_col_name, equals=for_key, is_secondary_index=False)
 
         if not res.exists():
             return None
