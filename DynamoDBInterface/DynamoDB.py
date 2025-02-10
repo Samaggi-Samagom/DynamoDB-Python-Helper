@@ -12,19 +12,24 @@ from typing import List, Dict, Any, Callable, Set, Optional
 from functools import partial as p
 from decimal import Decimal
 
+try:
+    from enum import member
+except ImportError:
+    member = lambda x: x
+
 
 class FilterType(enum.Enum):
-    EQUALS = p(lambda x, y: x == y)
-    EQUALS_NON_CS = p(lambda x, y: x.lower() == y.lower())
-    NOT_EQUAL = p(lambda x, y: x != y)
-    CONTAINS = p(lambda x, y: y in x)
-    NOT_CONTAIN = p(lambda x, y: y not in x)
-    GREATER_THAN = p(lambda x, y: x > y)
-    GREATER_THAN_EQUAL = p(lambda x, y: x >= y)
-    LESS_THAN = p(lambda x, y: x < y)
-    LESS_THAN_EQUAL = p(lambda x, y: x <= y)
-    IN = p(lambda x, y: x in y)
-    NOT_IN = p(lambda x, y: x not in y)
+    EQUALS = member(p(lambda x, y: x == y))
+    EQUALS_NON_CS = member(p(lambda x, y: x.lower() == y.lower()))
+    NOT_EQUAL = member(p(lambda x, y: x != y))
+    CONTAINS = member(p(lambda x, y: y in x))
+    NOT_CONTAIN = member(p(lambda x, y: y not in x))
+    GREATER_THAN = member(p(lambda x, y: x > y))
+    GREATER_THAN_EQUAL = member(p(lambda x, y: x >= y))
+    LESS_THAN = member(p(lambda x, y: x < y))
+    LESS_THAN_EQUAL = member(p(lambda x, y: x <= y))
+    IN = member(p(lambda x, y: x in y))
+    NOT_IN = member(p(lambda x, y: x not in y))
 
 
 class Filter:
