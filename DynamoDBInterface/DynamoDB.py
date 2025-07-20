@@ -396,10 +396,24 @@ class Table:
             if equals == "" or key == "":
                 return DatabaseQueryResult({}, self)
 
-            query = self._db.db_resource.Table(self._table_name).query(
-                KeyConditionExpression=Key(key).eq(equals),
-                ConsistentRead=consistent_read,
-            )
+            scan_result = []
+            temp = None
+
+            while temp is None or "LastEvaluatedKey" in temp:
+                if temp is None or temp["LastEvaluatedKey"] is None:
+                    temp = self._db.db_resource.Table(self._table_name).query(
+                        KeyConditionExpression=Key(key).eq(equals),
+                        ConsistentRead=consistent_read,
+                    )
+                else:
+                    temp = self._db.db_resource.Table(self._table_name).query(
+                        KeyConditionExpression=Key(key).eq(equals),
+                        ExclusiveStartKey=temp["LastEvaluatedKey"] if temp is not None else None,
+                        ConsistentRead=consistent_read
+                    )
+
+                if "Items" in temp and len(temp["Items"]) >= 1:
+                    scan_result += temp["Items"]
         else:
             gsi = self.gsi()
             if key not in gsi.keys():
@@ -410,13 +424,29 @@ class Table:
                 secondary_index_name = self.gsi()[key]
             if equals == "" or key == "":
                 return DatabaseQueryResult({}, self)
-            query = self._db.db_resource.Table(self._table_name).query(
-                IndexName=secondary_index_name,
-                KeyConditionExpression=Key(key).eq(equals),
-                ConsistentRead=consistent_read
-            )
 
-        return DatabaseQueryResult(query, self)
+            scan_result = []
+            temp = None
+
+            while temp is None or "LastEvaluatedKey" in temp:
+                if temp is None or temp["LastEvaluatedKey"] is None:
+                    temp = self._db.db_resource.Table(self._table_name).query(
+                        KeyConditionExpression=Key(key).eq(equals),
+                        IndexName=secondary_index_name,
+                        ConsistentRead=consistent_read,
+                    )
+                else:
+                    temp = self._db.db_resource.Table(self._table_name).query(
+                        KeyConditionExpression=Key(key).eq(equals),
+                        IndexName=secondary_index_name,
+                        ExclusiveStartKey=temp["LastEvaluatedKey"] if temp is not None else None,
+                        ConsistentRead=consistent_read
+                    )
+
+                if "Items" in temp and len(temp["Items"]) >= 1:
+                    scan_result += temp["Items"]
+
+        return DatabaseQueryResult({"Items": scan_result}, self)
 
     def write(self, values: Dict[str, Any]) -> None:
         values = self.__convert_to_decimal(values)
